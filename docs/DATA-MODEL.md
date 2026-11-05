@@ -1,6 +1,6 @@
 # Modelo de dados
 
-**Status:** conceitos fundamentais aprovados; regras de remoção, números e detalhes de interoperabilidade ainda em especificação.
+**Status:** tipos básicos e semântica estrutural aprovados em nível conceitual; regras de remoção, semântica numérica detalhada e interoperabilidade ainda em especificação.
 
 ## Tipos estruturais e terminais
 
@@ -29,7 +29,7 @@ O modelo distingue explicitamente:
 4. **String vazia (`s`):** existe uma string de comprimento zero.
 5. **Contêiner vazio (`o` ou `l`):** existe um objeto ou lista sem elementos.
 
-`undefined` e `null` são tipos distintos. Ambos possuem payload vazio (`'')); a semântica é determinada pelo tipo, não pelo conteúdo do payload. Uma string vazia também possui payload vazio, mas é identificada pelo tipo `s`.
+`undefined` e `null` são tipos distintos. Ambos possuem payload vazio (`''`). a semântica é determinada pelo tipo, não pelo conteúdo do payload. Uma string vazia também possui payload vazio, mas é identificada pelo tipo `s`.
 
 Não assuma que Bash possui valores nativos null ou undefined. O modelo SDStruct representa esses estados explicitamente.
 
@@ -72,7 +72,14 @@ A política para remoção de uma posição — deslocar os elementos seguintes 
 
 ## Tipos numéricos
 
-A distinção entre inteiro e decimal, limites numéricos, notação científica e preservação lexical do número precisam ser especificadas no contrato de tipos e parser.
+O núcleo inicial reconhece dois tipos numéricos:
+
+- **Inteiro (`i`):** valor numérico inteiro.
+- **Decimal (`d`):** valor numérico decimal.
+
+Float32, Float64/Double, BigInteger e outros tipos numéricos especializados ficam fora do núcleo inicial e poderão ser avaliados futuramente.
+
+Ainda precisam ser especificados: limites aceitos, notação científica, tratamento de números muito grandes e se a representação lexical original deve ser preservada. O parser não deve introduzir perda silenciosa de precisão; essa regra precisa ser definida antes da implementação.
 
 ## Chaves e strings
 
