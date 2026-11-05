@@ -84,3 +84,18 @@ O núcleo inicial reconhece `i` e `f`:
 ## Chaves e strings
 
 Chaves de objetos e valores string podem conter caracteres especiais. O formato canônico define o escaping dos bytes separadores no campo de chave/caminho. O payload é armazenado separadamente do campo de chave, portanto não precisa de um separador chave/valor embutido.
+
+## Representação interna em Bash
+
+A implementação pode manter os registros em um associative array Bash (declare -A). Nesse modelo, a chave do array contém a sequência de tipificadores, o separador de tipagem e o caminho; o valor associado contém exclusivamente o payload. A separação chave/valor já é fornecida pelo próprio associative array, portanto não se acrescenta um delimitador chave/valor dentro da chave ou do payload.
+
+Os delimitadores são definidos por variáveis globais do SDStruct, de forma análoga ao uso de IFS:
+
+```bash
+sds_LT=$'\xff'  # separador entre tipificadores e caminho
+sds_LP=$'\xfe'  # separador entre segmentos do caminho
+```
+
+A construção das chaves deve usar essas variáveis, em vez de repetir literais de bytes no código. A forma ANSI-C $'...' cria os bytes correspondentes no Bash. Essa representação descreve o armazenamento interno em memória; não define, por si só, a serialização da coleção para arquivo ou transporte.
+
+O modelo lógico não depende da ordem de iteração do associative array. Quando a ordem for relevante — especialmente para listas — a implementação deve reconstruí-la pelos índices numéricos dos caminhos.
