@@ -1,6 +1,6 @@
 # Formato canônico
 
-**Status:** princípios de tipagem integral do caminho, valores especiais e contêineres vazios aprovados; sintaxe física e codificação definitivas ainda não aprovadas.
+**Status:** princípios de tipagem integral do caminho, valores especiais, contêineres vazios e tipos numéricos básicos (`i` e `d`) aprovados; sintaxe física e codificação definitivas ainda não aprovadas.
 
 ## Objetivo
 
@@ -32,6 +32,10 @@ ols:rua/1 = ''
 ```
 
 O primeiro termina em undefined; o segundo termina em uma string vazia. Os exemplos fixam a semântica pretendida, mas não aprovam ainda os separadores, a gramática ou a codificação física.
+
+## Tipos numéricos
+
+O núcleo inicial reconhece `i` (inteiro) e `d` (decimal). Tipos de precisão específica, como Float32 e Float64/Double, e tipos numéricos especializados ficam para versões futuras. Limites, notação científica e preservação lexical ainda precisam ser especificados.
 
 ## Tipos com payload vazio
 
