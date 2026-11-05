@@ -1,6 +1,6 @@
 # Formato canônico
 
-**Status:** semântica dos caminhos, tipagem, tipos básicos, separadores e escaping por duplicação aprovados conceitualmente. A gramática completa de serialização externa e os limites de bytes ainda precisam de especificação.
+**Status:** semântica dos caminhos, tipagem, tipos básicos e variáveis delimitadoras aprovados conceitualmente. A gramática completa de serialização externa, o tratamento de bytes reservados em segmentos e os limites de bytes ainda precisam de especificação.
 
 ## Objetivo
 
@@ -56,21 +56,27 @@ Leitura: o caminho parte de um objeto (`o`), atravessa uma lista (`l`) e termina
 
 Os números `i` e `f` são armazenados como texto decimal ASCII. `f` não fixa precisão IEEE Float32 ou Float64; o lexema numérico recebido é preservado. Precisões específicas ficam para versões futuras.
 
-## Separadores e escaping
+## Delimitadores internos em Bash
 
-Foram escolhidos dois bytes de controle:
+O armazenamento canônico em memória pode ser implementado como um associative array Bash (declare -A). Cada chave contém a sequência de tipificadores seguida do caminho; o valor associado ao índice do array contém o payload do nó terminal.
 
-- `0xFE`: separador entre segmentos sucessivos do caminho.
-- `0xFF`: separador entre a sequência de tipificadores e o caminho.
+Não existe um separador chave/valor adicional dentro do registro: o próprio associative array mantém chave e valor em campos distintos.
 
-Quando um byte `0xFE` ou `0xFF` ocorrer literalmente dentro de um segmento do caminho, será escapado por duplicação:
+Os dois delimitadores são expostos por variáveis globais do SDStruct, seguindo a ideia de configuração de IFS:
 
-- byte literal `0xFE` no dado → `0xFE 0xFE`;
-- byte literal `0xFF` no dado → `0xFF 0xFF`.
+```bash
+sds_LT=$'\xff'  # separador entre a sequência de tipificadores e o caminho
+sds_LP=$'\xfe'  # separador entre segmentos sucessivos do caminho
+```
 
-Um único `0xFE` não duplicado separa segmentos do caminho. Um único `0xFF` não duplicado separa a sequência de tipificadores do caminho. O decodificador deve reconhecer pares duplicados como bytes literais e bytes simples como delimitadores estruturais.
+- sds_LT contém o byte 0xFF.
+- sds_LP contém o byte 0xFE.
 
-A regra de duplicação aplica-se aos bytes do campo de chave/caminho. Não há separador chave/valor nem necessidade de escapar esses delimitadores no payload por causa da estrutura do registro, pois o payload é armazenado no campo de valor separado.
+O código deve referenciar essas variáveis ao montar e interpretar as chaves, evitando espalhar literais de bytes pelo projeto. A notação Bash $'...' é usada para produzir os bytes reais, não os caracteres literais \\xFF ou \\xFE.
+
+Essa definição trata da representação interna em memória. A serialização da coleção para arquivo ou transporte é uma camada separada e ainda não está definida. A ordem de iteração de um associative array Bash não é garantida; listas devem ser reconstruídas pela ordem numérica dos índices, e não pela ordem de enumeração do array.
+
+**Bytes reservados em segmentos:** ainda não foi aprovada uma regra de escaping para ocorrências literais de 0xFE ou 0xFF dentro de chaves/caminhos. Não assumir duplicação, nem outra convenção, até decisão explícita e testes de round-trip.
 
 ## Codificação segura e limitações do Bash
 
