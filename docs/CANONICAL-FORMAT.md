@@ -1,6 +1,6 @@
 # Formato canônico
 
-**Status:** direção conceitual aprovada; sintaxe e codificação definitivas ainda não aprovadas.
+**Status:** princípios de tipagem integral do caminho, valores especiais e contêineres vazios aprovados; sintaxe física e codificação definitivas ainda não aprovadas.
 
 ## Objetivo
 
@@ -8,38 +8,56 @@ Todas as interfaces e conversores devem compartilhar uma representação canôni
 
 ## Registros terminais
 
-A proposta atual é armazenar registros que identifiquem caminhos até valores terminais. Os tipos estruturais ao longo do caminho permitem inferir a hierarquia.
+A representação utiliza registros que identificam caminhos até valores terminais. A tipagem ao longo do caminho permite inferir a hierarquia.
 
-Exemplo puramente ilustrativo:
+Um registro também pode terminar em um contêiner vazio. Nesse caso, o próprio contêiner é o nó terminal registrado; não é necessário criar registros artificiais para seus descendentes.
+
+## Tipagem integral do caminho
+
+A tipagem cobre todo o caminho, desde a estrutura raiz até o valor terminal. Deve haver um tipificador para cada nível correspondente, inclusive para o valor terminal. Não se tipa apenas o valor final.
+
+Exemplo conceitual:
 
 ```text
-os:servidor/nome = web1
-oai:servidor/portas/0 = 80
-oai:servidor/portas/1 = 477
+oln:rua/1 = ''
 ```
 
-A notação acima **não é contrato**: os códigos, separadores, ordem dos tipificadores e escaping ainda precisam ser definidos.
+Leitura: o caminho parte de um objeto (`o`), atravessa uma lista (`l`) e termina em um valor null (`n`). A sequência de tipificadores descreve os níveis estruturais e o valor terminal.
 
-## Caminhos e tipificadores
+Outros exemplos:
 
-A ideia em avaliação é que a tipagem descreva cada nível do caminho, e não apenas o valor final. Assim, um caminho pode informar que um segmento é objeto, o seguinte é lista e o último é um valor inteiro.
+```text
+olu:rua/1 = ''
+ols:rua/1 = ''
+```
+
+O primeiro termina em undefined; o segundo termina em uma string vazia. Os exemplos fixam a semântica pretendida, mas não aprovam ainda os separadores, a gramática ou a codificação física.
+
+## Tipos com payload vazio
+
+Os tipos `u` (undefined) e `n` (null) possuem payload vazio (`''`). O tipo, e não o conteúdo do payload, determina o significado.
+
+Uma string vazia também possui payload vazio, mas é identificada pelo tipo `s`. Assim, undefined, null e string vazia permanecem distinguíveis.
+
+Contêineres vazios seguem o mesmo princípio: o registro termina no próprio contêiner, identificado pelo tipo `o` (objeto) ou `l` (lista), com payload vazio.
 
 ## Compactação estrutural
 
-A proposta é não criar registros redundantes para todos os nós intermediários. A hierarquia deve ser inferível a partir dos caminhos e tipos.
+A proposta é não criar registros redundantes para todos os nós intermediários. A hierarquia deve ser inferível a partir dos caminhos e de sua tipagem integral.
 
-Exceções necessárias, como contêineres vazios, precisam ser representadas explicitamente sem violar o objetivo de compactação.
+Registros terminais explícitos são necessários para preservar valores terminais e contêineres vazios.
 
 ## Codificação segura
 
 Caracteres de controle foram considerados como possíveis delimitadores para reduzir colisões com texto comum. Nenhum byte ou delimitador foi aprovado.
 
 A implementação deve aguardar a definição de:
+
 - codificação de segmentos;
 - escaping;
 - tratamento de Unicode e bytes;
 - limites de tamanho;
-- separação entre metadados, caminho, tipo e valor;
+- separação entre metadados, caminho, sequência de tipos e valor;
 - serialização segura para transporte entre processos.
 
 Lembrete: variáveis Bash não podem conter byte NUL. Qualquer proposta de codificação deve respeitar as limitações reais do Bash.
@@ -48,8 +66,9 @@ Lembrete: variáveis Bash não podem conter byte NUL. Qualquer proposta de codif
 
 - Não há colisões entre caminhos distintos.
 - Chaves e strings especiais podem ser preservadas.
-- Tipos estruturais são recuperáveis.
-- Contêineres vazios são preservados.
-- Ausência, string vazia, null e posição não preenchida são distinguíveis.
+- A tipagem de todos os níveis do caminho, inclusive do valor terminal, é recuperável.
+- Contêineres vazios são preservados como registros cujo caminho termina no próprio contêiner.
+- Ausente, undefined, null e string vazia são distinguíveis.
+- Undefined e null podem ser representados com payload vazio, sem ambiguidade porque possuem tipos distintos.
 - O formato pode ser lido e escrito sem executar dados.
 - As quatro interfaces produzem a mesma semântica.
