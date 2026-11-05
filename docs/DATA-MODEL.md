@@ -1,41 +1,74 @@
 # Modelo de dados
 
-**Status:** conceitos fundamentais aprovados; semântica detalhada ainda em especificação.
+**Status:** conceitos fundamentais aprovados; regras de remoção, números e detalhes de interoperabilidade ainda em especificação.
 
-## Tipos estruturais
+## Tipos estruturais e terminais
 
 O modelo contempla, no mínimo:
-- **Objeto:** coleção de propriedades identificadas por chaves.
-- **Lista:** coleção ordenada de posições indexadas.
-- **Valores terminais:** strings, números, booleanos e null, além de eventuais tipos adicionais aprovados.
+
+- **Objeto (`o`):** coleção de propriedades identificadas por chaves.
+- **Lista (`l`):** coleção ordenada de posições indexadas.
+- **String (`s`):** valor textual, inclusive string vazia.
+- **Inteiro (`i`):** valor numérico inteiro.
+- **Decimal (`d`):** valor numérico decimal.
+- **Booleano (`b`):** valor lógico.
+- **Null (`n`):** valor nulo explícito.
+- **Undefined (`u`):** posição ou propriedade existente, mas ainda não definida/preenchida.
+
+Os códigos acima registram a convenção conceitual aprovada até aqui. A sintaxe física e a codificação dos registros pertencem ao contrato do formato canônico.
 
 Objetos podem ser esparsos: propriedades não declaradas não existem.
 
-Listas do SDStruct devem obedecer à regra de índices contíguos. A política exata para criação automática de posições intermediárias e remoção de posições ainda precisa ser aprovada.
-
 ## Estados que não podem ser confundidos
 
-O modelo deve distinguir:
-1. **Ausente:** não há propriedade/elemento declarado.
-2. **String vazia:** valor textual de comprimento zero.
-3. **Null:** valor nulo explícito.
-4. **Posição não preenchida:** estado potencialmente necessário para representar uma posição intermediária de lista; semântica e nome ainda pendentes.
+O modelo distingue explicitamente:
 
-Não assuma que Bash possui um valor null nativo. O modelo deve representar esse estado explicitamente.
+1. **Ausente:** não há propriedade/elemento declarado no caminho.
+2. **Undefined (`u`):** a posição ou propriedade existe, mas não recebeu um valor definido.
+3. **Null (`n`):** existe explicitamente um valor nulo.
+4. **String vazia (`s`):** existe uma string de comprimento zero.
+5. **Contêiner vazio (`o` ou `l`):** existe um objeto ou lista sem elementos.
+
+`undefined` e `null` são tipos distintos. Ambos possuem payload vazio (`'')); a semântica é determinada pelo tipo, não pelo conteúdo do payload. Uma string vazia também possui payload vazio, mas é identificada pelo tipo `s`.
+
+Não assuma que Bash possui valores nativos null ou undefined. O modelo SDStruct representa esses estados explicitamente.
+
+## Tipagem integral do caminho
+
+A tipagem não se limita ao valor terminal. Ela cobre todo o caminho, desde a estrutura raiz até o valor terminal, com um tipificador para cada nível correspondente.
+
+Exemplo conceitual:
+
+```text
+oln:rua/1 = ''
+```
+
+Leitura: o caminho parte de um objeto (`o`), atravessa uma lista (`l`) e termina em um valor null (`n`). O payload do valor terminal é vazio.
+
+Da mesma forma:
+
+```text
+olu:rua/1 = ''
+ols:rua/1 = ''
+```
+
+O primeiro termina em undefined; o segundo termina em uma string vazia. Os exemplos ilustram a semântica e não fixam, por si só, a sintaxe definitiva do formato.
+
+A sequência de tipificadores deve permitir recuperar a natureza de cada nível do caminho, além do tipo do valor terminal.
 
 ## Contêineres vazios
 
-Objetos vazios e listas vazias são dados estruturais existentes e precisam sobreviver a importação, armazenamento e exportação. Como o projeto pretende evitar registros redundantes de nós intermediários, a representação de um contêiner vazio precisa ser definida no formato canônico.
+Objetos vazios e listas vazias são dados estruturais existentes e precisam sobreviver à importação, armazenamento e exportação.
+
+Um contêiner vazio é representado por um registro terminal cujo caminho termina no próprio contêiner. Seu tipo terminal identifica o contêiner (`o` ou `l`) e o payload é vazio (`''`). Portanto, não se deve confundir um contêiner vazio com um caminho ausente ou com uma string vazia.
 
 ## Listas
 
-A regra conceitual aprovada é que listas SDStruct sejam contíguas: não deve existir uma posição posterior sem que as posições anteriores estejam representadas.
+Listas SDStruct devem ser contíguas no modelo lógico: não deve existir uma posição posterior sem que as posições anteriores estejam representadas.
 
-Ainda é necessário decidir:
-- se inserir índice alto cria posições não preenchidas intermediárias;
-- qual é a semântica dessas posições;
-- se remover uma posição desloca as seguintes;
-- como importar arrays esparsos de formatos externos.
+Ao inserir um elemento em um índice mais alto, as posições intermediárias faltantes são criadas como `undefined` (`u`). Isso mantém a organização contígua sem transformar automaticamente essas posições em `null` ou em strings vazias.
+
+A política para remoção de uma posição — deslocar os elementos seguintes ou preservar a posição como `undefined` — ainda precisa ser aprovada. Também precisa ser definida a política de importação de arrays esparsos de formatos externos.
 
 ## Tipos numéricos
 
