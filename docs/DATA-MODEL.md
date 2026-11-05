@@ -1,6 +1,6 @@
 # Modelo de dados
 
-**Status:** estrutura básica e semântica central aprovadas; detalhes numéricos, parser externo e regras de codificação ainda em especificação.
+**Status:** estrutura básica, tipos do núcleo e semântica central aprovados; detalhes de codificação e limites de interoperabilidade ainda em especificação.
 
 ## Tipos estruturais e terminais
 
@@ -9,12 +9,13 @@ O núcleo inicial contempla:
 - **Objeto (`o`):** coleção de propriedades identificadas por chaves.
 - **Lista (`l`):** coleção ordenada de posições indexadas.
 - **String (`s`):** valor textual, inclusive string vazia.
-- **Inteiro (`i`):** valor inteiro, armazenado textualmente em representação decimal legível (dígitos ASCII e sinal, quando aplicável).
+- **Inteiro (`i`):** número inteiro, mantido em representação decimal textual legível para Bash.
+- **Float (`f`):** número JSON com parte fracionária e/ou expoente. O lexema numérico original é mantido textualmente; não se exige conversão para um float nativo do Bash.
 - **Booleano (`b`):** valor lógico.
 - **Null (`n`):** valor nulo explícito.
 - **Undefined (`u`):** posição ou propriedade existente, mas ainda não definida/preenchida.
 
-Float32, Float64/Double, decimal de precisão arbitrária, BigInteger como tipo distinto e outros tipos especializados ficam fora do núcleo inicial. A representação decimal textual de `i` não implica conversão para ponto flutuante.
+Float32, Float64/Double como precisões distintas, Decimal128, BigInteger como tipo separado e outros tipos especializados ficam fora do núcleo inicial. `f` representa a categoria de número de ponto flutuante recebida, não uma promessa de precisão IEEE específica.
 
 ## Estados que não podem ser confundidos
 
@@ -73,10 +74,13 @@ Ao remover um elemento de uma lista, os elementos posteriores avançam uma posi�
 
 ## Números e interoperabilidade
 
-O único tipo numérico do núcleo inicial é `i`. Seu valor é mantido como representação decimal textual legível para Bash, sem exigir conversão para ponto flutuante.
+O núcleo inicial reconhece `i` e `f`:
 
-JSON possui uma categoria numérica única e pode apresentar inteiros, decimais e notação exponencial. A política do parser SDStruct para números JSON que não sejam inteiros ainda precisa ser definida. Não é permitido arredondar ou truncar silenciosamente esses valores.
+- Um número JSON sem fração e sem expoente, como `10`, é classificado como `i`.
+- Um número JSON com fração ou expoente, como `10.5`, `10.0` ou `1e3`, é classificado como `f`.
+- O lexema numérico é preservado como texto decimal ASCII, sem arredondamento, truncamento ou conversão silenciosa para string.
+- A classificação lexical não afirma que o valor seja IEEE Float32 ou Float64. Precisões específicas poderão ser acrescentadas futuramente.
 
 ## Chaves e strings
 
-Chaves de objetos e valores string podem conter caracteres especiais. O formato canônico deve definir codificação e escaping sem colisões. Não presumir que separadores escolhidos estarão ausentes dos dados.
+Chaves de objetos e valores string podem conter caracteres especiais. O formato canônico define o escaping dos bytes separadores no campo de chave/caminho. O payload é armazenado separadamente do campo de chave, portanto não precisa de um separador chave/valor embutido.
