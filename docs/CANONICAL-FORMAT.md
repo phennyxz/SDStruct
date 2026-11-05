@@ -1,6 +1,6 @@
 # Formato canônico
 
-**Status:** princípios de tipagem integral do caminho, valores especiais, contêineres vazios e tipos numéricos básicos (`i` e `d`) aprovados; sintaxe física e codificação definitivas ainda não aprovadas.
+**Status:** semântica dos caminhos, tipagem, tipos básicos e separadores de caminho/tipagem aprovados conceitualmente; gramática completa, separação do payload e escaping ainda pendentes.
 
 ## Objetivo
 
@@ -12,67 +12,73 @@ A representação utiliza registros que identificam caminhos até valores termin
 
 Um registro também pode terminar em um contêiner vazio. Nesse caso, o próprio contêiner é o nó terminal registrado; não é necessário criar registros artificiais para seus descendentes.
 
+## Raiz e caminhos
+
+A raiz é um nó especial cujo caminho é vazio. Não se acrescenta índice `0` nem chave artificial à raiz, independentemente de ela ser objeto, lista ou valor escalar.
+
+Chaves de objetos são sempre strings. Índices de listas são numéricos e não negativos.
+
 ## Tipagem integral do caminho
 
-A tipagem cobre todo o caminho, desde a estrutura raiz até o valor terminal. Deve haver um tipificador para cada nível correspondente, inclusive para o valor terminal. Não se tipa apenas o valor final.
+A tipagem cobre todo o caminho, desde a raiz até o valor terminal. Deve haver um tipificador para cada nível correspondente, inclusive para o valor terminal. Não se tipa apenas o valor final.
 
-Exemplo conceitual:
+Exemplo semântico:
 
 ```text
 oln:rua/1 = ''
 ```
 
-Leitura: o caminho parte de um objeto (`o`), atravessa uma lista (`l`) e termina em um valor null (`n`). A sequência de tipificadores descreve os níveis estruturais e o valor terminal.
+Leitura: o caminho parte de um objeto (`o`), atravessa uma lista (`l`) e termina em um valor null (`n`).
 
-Outros exemplos:
+## Tipos do núcleo inicial
 
-```text
-olu:rua/1 = ''
-ols:rua/1 = ''
-```
+- `o`: objeto.
+- `l`: lista.
+- `s`: string.
+- `i`: inteiro.
+- `b`: booleano.
+- `n`: null.
+- `u`: undefined.
 
-O primeiro termina em undefined; o segundo termina em uma string vazia. Os exemplos fixam a semântica pretendida, mas não aprovam ainda os separadores, a gramática ou a codificação física.
+`u` e `n` possuem payload vazio (`''`), mas são distintos pelo tipificador. String vazia também possui payload vazio e é identificada por `s`. Contêineres vazios são identificados por `o` ou `l`, com o caminho terminando no próprio contêiner e payload vazio.
 
-## Tipos numéricos
+Tipos float/double, decimais especializados e outros tipos numéricos ficam fora do núcleo inicial.
 
-O núcleo inicial reconhece `i` (inteiro) e `d` (decimal). Tipos de precisão específica, como Float32 e Float64/Double, e tipos numéricos especializados ficam para versões futuras. Limites, notação científica e preservação lexical ainda precisam ser especificados.
+## Separadores conceituais aprovados
 
-## Tipos com payload vazio
+Foram escolhidos dois bytes de controle:
 
-Os tipos `u` (undefined) e `n` (null) possuem payload vazio (`''`). O tipo, e não o conteúdo do payload, determina o significado.
+- `0xFE`: separador entre segmentos sucessivos do caminho.
+- `0xFF`: separador entre a sequência de tipificadores e o caminho.
 
-Uma string vazia também possui payload vazio, mas é identificada pelo tipo `s`. Assim, undefined, null e string vazia permanecem distinguíveis.
+Esses bytes são escolhas conceituais aprovadas para o formato. A gramática completa ainda precisa definir a posição exata desses campos, como o payload é separado do cabeçalho, e como representar/escapar ocorrências desses bytes dentro de chaves e valores.
 
-Contêineres vazios seguem o mesmo princípio: o registro termina no próprio contêiner, identificado pelo tipo `o` (objeto) ou `l` (lista), com payload vazio.
+A representação do inteiro `i` será textual em base 10, legível para Bash; não será armazenada como inteiro binário nativo.
 
-## Compactação estrutural
+## Codificação segura e limitações do Bash
 
-A proposta é não criar registros redundantes para todos os nós intermediários. A hierarquia deve ser inferível a partir dos caminhos e de sua tipagem integral.
+A implementação deve tratar o formato como sequência de bytes, não presumir que os registros são UTF-8 válido. Os bytes `0xFE` e `0xFF` não são bytes válidos isoladamente em UTF-8, o que precisa ser considerado ao ler, escrever, transportar e testar os registros.
 
-Registros terminais explícitos são necessários para preservar valores terminais e contêineres vazios.
+Variáveis Bash não podem conter byte NUL (`0x00`). Qualquer proposta de codificação deve respeitar essa limitação. Também será necessário especificar escaping ou outra estratégia para impedir que dados contendo os bytes separadores sejam confundidos com a estrutura.
 
-## Codificação segura
+## Decisões ainda pendentes
 
-Caracteres de controle foram considerados como possíveis delimitadores para reduzir colisões com texto comum. Nenhum byte ou delimitador foi aprovado.
-
-A implementação deve aguardar a definição de:
-
-- codificação de segmentos;
-- escaping;
-- tratamento de Unicode e bytes;
+- gramática exata e ordem dos campos do registro;
+- separador entre cabeçalho e payload;
+- escaping de `0xFE` e `0xFF` em chaves e valores;
+- codificação de segmentos, Unicode e bytes arbitrários;
 - limites de tamanho;
-- separação entre metadados, caminho, sequência de tipos e valor;
-- serialização segura para transporte entre processos.
-
-Lembrete: variáveis Bash não podem conter byte NUL. Qualquer proposta de codificação deve respeitar as limitações reais do Bash.
+- política para números JSON decimais ou em notação exponencial;
+- validação de registros malformados e duplicados.
 
 ## Critérios de aceitação do formato
 
 - Não há colisões entre caminhos distintos.
 - Chaves e strings especiais podem ser preservadas.
 - A tipagem de todos os níveis do caminho, inclusive do valor terminal, é recuperável.
+- A raiz é representada por caminho vazio, sem índice artificial.
 - Contêineres vazios são preservados como registros cujo caminho termina no próprio contêiner.
 - Ausente, undefined, null e string vazia são distinguíveis.
-- Undefined e null podem ser representados com payload vazio, sem ambiguidade porque possuem tipos distintos.
+- Listas são sequenciais; remoções deslocam os elementos posteriores.
 - O formato pode ser lido e escrito sem executar dados.
 - As quatro interfaces produzem a mesma semântica.
