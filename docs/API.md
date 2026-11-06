@@ -11,7 +11,7 @@ A API deve oferecer operações previsíveis para manipular estruturas SDStruct 
 | Operação | Responsabilidade |
 |---|---|
 | `sd_get` | Obter valor em um caminho |
-| `sd_set` | Criar ou alterar valor |
+| `sd_set` | Alterar a estrutura de um caminho existente (renomear e/ou mudar tipo terminal); a atribuição é outra operação (a nomear) |
 | `sd_exists` | Verificar existência |
 | `sd_type` | Consultar tipo |
 | `sd_delete` | Remover dado ou subestrutura |
@@ -24,6 +24,12 @@ A API deve oferecer operações previsíveis para manipular estruturas SDStruct 
 | `sd_export` | Exportar dados para um formato |
 
 Os nomes são candidatos, não contratos.
+
+### Atribuição × `set` (conceito; implementação provisória em `docs/CORE.md`)
+
+> Ordinary assignment creates missing paths and updates compatible existing values. "set" is an exceptional structural operation used to rename an existing path and/or change its terminal node type.
+
+A operação ordinária do usuário é atribuir um valor a um caminho (criando o que faltar). Na candidata `sd_set` da tabela acima, o papel "criar" pertence à **atribuição**; `set` não é atribuição, não cria caminhos nem atualiza payload de mesmo tipo e não altera o tipo de nós intermediários. No núcleo atual: `sds_core_assign` e `sds_core_set CHAVE_ATUAL CHAVE_NOVA`, ambos nomes provisórios.
 
 ## Iteração
 

@@ -57,6 +57,7 @@ O primeiro alvo é Bash 4.3+. Recursos como arrays associativos e namerefs podem
 - Operações que exigem varredura devem ser identificadas como tais.
 - A árvore pode ser reconstruída para ferramentas de inspeção, como visualização e listagem de filhos.
 - Medições devem preceder otimizações.
+- Implementação atual (provisória, ver `docs/CORE.md`): atribuição, consulta e remoção de escalar são localizadas (O(profundidade)) graças a um índice auxiliar derivado, descartável; o array de dados é a única fonte da verdade e nunca é reconstruído em operações ordinárias. O índice aguarda aprovação da direção.
 
 ## Segurança
 
