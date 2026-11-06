@@ -4,7 +4,7 @@
 
 O projeto busca oferecer uma API de Shell para trabalhar com estruturas compostas sem exigir ferramentas externas como Python, Node.js ou `jq`.
 
-> **Status:** planejamento e fundação documental. A implementação ainda não começou.
+> **Status:** planejamento e fundação documental; núcleo canônico inicial em implementação (ver [notas do núcleo](docs/CORE.md); contratos provisórios). `tests/run.sh` executa a suíte; `tests/bench.sh` mede desempenho. Atribuição ordinária cria caminhos e atualiza valores; `set` é operação estrutural excepcional (renomear / mudar tipo terminal).
 >
 > **Plataforma inicial:** Bash 4.3 ou superior.
 
@@ -33,6 +33,7 @@ Consulte:
 - [Modelo de dados](docs/DATA-MODEL.md)
 - [Formato canônico](docs/CANONICAL-FORMAT.md)
 - [Contratos da API](docs/API.md)
+- [Núcleo: notas de implementação](docs/CORE.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Decisões arquiteturais](docs/decisions/ADR-0001.md)
 - [Instruções para agentes](AGENTS.md)
